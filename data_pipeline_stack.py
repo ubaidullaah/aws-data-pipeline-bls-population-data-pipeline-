@@ -22,9 +22,12 @@ class DataPipelineStack(Stack):
         super().__init__(scope, construct_id, **kwargs)
 
         # S3 Bucket for storing data files
+        # Note: we do NOT hard-code the bucket name to avoid conflicts if a bucket
+        # with that name already exists in the account/region. AWS will generate
+        # a unique physical name, which is exposed via CloudFormation outputs.
         bucket = s3.Bucket(
-            self, "BlsDataBucket",
-            bucket_name="bls-dataset-sync2",
+            self,
+            "BlsDataBucket",
             removal_policy=RemovalPolicy.RETAIN,  # Keep bucket on stack deletion
             auto_delete_objects=False,
         )
@@ -38,6 +41,7 @@ class DataPipelineStack(Stack):
         )
 
         # Lambda function for Part 1 & 2: Sync BLS files and fetch API data
+        # Uses Docker bundling to install only required dependencies.
         sync_lambda = _lambda.Function(
             self, "SyncDataLambda",
             runtime=_lambda.Runtime.PYTHON_3_12,
@@ -47,22 +51,25 @@ class DataPipelineStack(Stack):
                 bundling=BundlingOptions(
                     image=_lambda.Runtime.PYTHON_3_12.bundling_image,
                     command=[
-                        "bash", "-c",
-                        "pip install -r requirements.txt -t /asset-output && cp -au . /asset-output"
+                        "bash",
+                        "-c",
+                        "pip install -r sync_requirements.txt -t /asset-output "
+                        "&& cp sync_and_fetch.py /asset-output/"
                     ],
-                )
+                ),
             ),
             timeout=Duration.minutes(15),
             memory_size=512,
             environment={
                 "BUCKET_NAME": bucket.bucket_name,
-            }
+            },
         )
 
         # Grant permissions to sync Lambda
         bucket.grant_read_write(sync_lambda)
 
         # Lambda function for Part 3: Data analytics and reporting
+        # Uses Docker bundling to install only required dependencies.
         report_lambda = _lambda.Function(
             self, "ReportLambda",
             runtime=_lambda.Runtime.PYTHON_3_12,
@@ -72,16 +79,18 @@ class DataPipelineStack(Stack):
                 bundling=BundlingOptions(
                     image=_lambda.Runtime.PYTHON_3_12.bundling_image,
                     command=[
-                        "bash", "-c",
-                        "pip install -r requirements.txt -t /asset-output && cp -au . /asset-output"
+                        "bash",
+                        "-c",
+                        "pip install -r report_requirements.txt -t /asset-output "
+                        "&& cp report_processor.py /asset-output/"
                     ],
-                )
+                ),
             ),
             timeout=Duration.minutes(15),
             memory_size=1024,  # More memory for pandas operations
             environment={
                 "BUCKET_NAME": bucket.bucket_name,
-            }
+            },
         )
 
         # Grant permissions to report Lambda
@@ -99,11 +108,12 @@ class DataPipelineStack(Stack):
         )
 
         # EventBridge Rule to trigger sync Lambda daily
+
         rule = events.Rule(
             self, "DailySyncRule",
             schedule=events.Schedule.cron(
-                hour="0",  # Run at midnight UTC
-                minute="0"
+                hour="17",  # 15:26 UTC
+                minute="20"
             ),
         )
         rule.add_target(targets.LambdaFunction(sync_lambda))

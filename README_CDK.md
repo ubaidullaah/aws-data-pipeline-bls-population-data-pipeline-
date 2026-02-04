@@ -137,7 +137,6 @@ cdk destroy
 
 ## Configuration
 
-You can modify the following in `data_pipeline_stack.py`:
 - Bucket name (currently: `bls-dataset-sync2`)
 - Schedule time for daily sync (currently: midnight UTC)
 - Lambda memory and timeout settings
