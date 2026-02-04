@@ -142,9 +142,3 @@ cdk destroy
 - Lambda memory and timeout settings
 - SQS queue retention period
 
-## Troubleshooting
-
-1. **Lambda timeout errors**: Increase timeout in `data_pipeline_stack.py`
-2. **Memory errors**: Increase memory allocation for Lambda functions
-3. **Permission errors**: Ensure IAM roles have proper S3 and SQS permissions
-4. **S3 event not triggering**: Check S3 bucket notification configuration

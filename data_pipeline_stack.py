@@ -21,10 +21,7 @@ class DataPipelineStack(Stack):
     def __init__(self, scope: Construct, construct_id: str, **kwargs) -> None:
         super().__init__(scope, construct_id, **kwargs)
 
-        # S3 Bucket for storing data files
-        # Note: we do NOT hard-code the bucket name to avoid conflicts if a bucket
-        # with that name already exists in the account/region. AWS will generate
-        # a unique physical name, which is exposed via CloudFormation outputs.
+       
         bucket = s3.Bucket(
             self,
             "BlsDataBucket",

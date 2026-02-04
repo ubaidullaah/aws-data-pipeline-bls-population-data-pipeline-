@@ -198,7 +198,7 @@ def sync_files():
     print("BLS file sync process completed!")
 
 
-# ========== PART 2: API Data Fetch Functions ==========
+# API Data Fetch Functions 
 
 def fetch_data_from_api(url):
     """Fetch data from the API."""

@@ -5,7 +5,6 @@ from urllib.parse import urljoin
 import time
 import hashlib
 
-# AWS Setup (Make sure you have your AWS CLI configured or set the environment variables)
 s3 = boto3.client('s3')
 bucket_name = 'bls-dataset-sync2'  
 
@@ -104,12 +103,11 @@ def file_needs_update(file_name, file_url, s3_etag):
                     md5_hash.update(chunk)
                     file_content += chunk
             remote_md5 = md5_hash.hexdigest()
-            # S3 ETag is MD5 for single-part uploads (without quotes)
+            # S3 ETag is MD5 for single-part uploads 
             s3_md5 = s3_etag.strip('"')
             needs_update = remote_md5 != s3_md5
             return needs_update, file_content if needs_update else None
         else:
-            # Can't download, assume needs update
             return True, None
     except Exception as e:
         print(f"Error checking file {file_name}: {e}")
